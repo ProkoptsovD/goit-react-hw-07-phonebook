@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { Form, Wrapper, AddContact, Label, Input } from './ContactForm.styled';
 import { storage } from "services";
-import { useDispatch, useSelector } from "react-redux";
-import { contactsSelectors } from "redux/contacts/contacts.selectors";
-import { toast } from "react-toastify";
-import { contactsActions } from "redux/contacts/contacts.slice";
+import { useChechContactQuery, useCreateContactMutation } from "services/contactsApi";
+import { notificationService } from "services/notificationService";
 
 const CONTACT_NAME_KEY = 'contact-name';
 const CONTACT_NUMBER_KEY = 'contact-number';
@@ -15,11 +13,12 @@ const initializeNumber = () => storage.load(CONTACT_NUMBER_KEY) ?? '';
 const ContactForm = () => {
     const [ name, setName ] = useState(initializeName);
     const [ number, setNumber ] = useState(initializeNumber);
+    const [ isSubmited, setIsSubmited ] = useState(false);
 
-    const dispatch = useDispatch();
-    const contacts = useSelector(contactsSelectors.getAllContacts);
+    const { data: contact } = useChechContactQuery(name, { skip: !isSubmited });
+    const [ createContact, isSuccess, isError ] = useCreateContactMutation();
 
-    const isContactUnique = (contactName) => !contacts.some(({ name }) => name.toLowerCase() === contactName.toLowerCase());
+    const hasContact = contact?.length;
 
     const contactMap = {
         'name': (name) => setName(name),
@@ -37,6 +36,15 @@ const ContactForm = () => {
         contactMap[name](value);
     }
 
+    const handleContactCreation = () => {
+        createContact({ name, phone: number });
+        notificationService(isSuccess, isError, {
+                onSuccess: `Contact ${name} was added to the phonebook`,
+                onError: 'Something went wrong! Please, try again'
+            }
+        )
+    }
+
     const reset = () => {
         setName('');
         setNumber('');
@@ -44,10 +52,12 @@ const ContactForm = () => {
     const handleFormSubmit = (e) => {
         e.preventDefault();
 
-        if(!isContactUnique(name)) {
-            toast.error(`${name} has been already added`)
-        } else {
-            dispatch(contactsActions.addContact(name, number));
+        setIsSubmited(true);
+        
+        if(hasContact) {
+            notificationService(null, null, { onError: `${name} has been already added`}, 'errorOnly')
+        }  else {
+            handleContactCreation();
             reset();
         }
     }

@@ -45,5 +45,10 @@
   },
   "devDependencies": {
     "styled-components": "^5.3.5"
+  },
+  "proxy": {
+    "/api/users": {
+        "target": "http://localhost:3000"
+    }
   }
 }

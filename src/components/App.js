@@ -6,18 +6,11 @@ import Container from './common/Container';
 import ContactForm from './ContactForm';
 import ContactList from './ContactList';
 import Filter from './Filter';
-import Empty from './Empty';
 
 import styles from './App.module.css';
 import 'react-toastify/dist/ReactToastify.css';
 
-import { useSelector } from 'react-redux';
-import { contactsSelectors } from 'redux/contacts/contacts.selectors';
-
 export const App = () => {
-  const contacts = useSelector(contactsSelectors.getAllContacts);
-  const isEmpty = contacts.length === 0;
-
     return (
       <ThemeProvider theme={theme}>
         <Container>
@@ -29,11 +22,7 @@ export const App = () => {
             Contacts
           </h2>
           <Filter />
-          {
-            !isEmpty
-              ? <ContactList />
-              : <Empty message="Your phonebook is empty..."/>
-          }
+          <ContactList />
         </Container>
         <ToastContainer />
       </ThemeProvider>

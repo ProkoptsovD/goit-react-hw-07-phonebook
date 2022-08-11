@@ -1,29 +1,39 @@
-import { useDispatch, useSelector } from 'react-redux';
 import { ListItem, ListOfContacts } from './ContactList.styled';
-import { contactsActions } from 'redux/contacts/contacts.slice';
-import { contactsSelectors } from 'redux/contacts/contacts.selectors';
+import { useGetAllContactsQuery } from 'services/contactsApi';
+import { useSelector } from 'react-redux';
+import { filterSelectors } from 'redux/filter/filter.selectors';
 import Contact from './Contact';
+import Empty from '../Empty';
+import Loader from 'components/common/Loader';
 
 const ContactList = () => {
-    const dispatch = useDispatch();
-    const rawContacts = useSelector(contactsSelectors.getAllContacts);
-    const filteredContacts = useSelector(contactsSelectors.getFilteredContacts);
-    const contactList = filteredContacts ? filteredContacts : rawContacts
+    const { data , error, isLoading  } = useGetAllContactsQuery();
+    const filter = useSelector(filterSelectors.getFilter);
+    
+    const hasData = data?.length && !error;
+    const showLoader = !hasData && !isLoading ;
+    
+    const filteredContacts = hasData ? data.filter(({ name }) => name.toLowerCase().includes(filter.toLowerCase())) : [];
+    const contactList = filteredContacts.length ? filteredContacts : data;
 
     return (
-        <ListOfContacts>
-            {contactList.map(({ id, name, number }) => (
-                <ListItem
-                    key={id}
-                    onClick={() => dispatch(contactsActions.deleteContact(id))}
-                >
-                    <Contact
-                        name={name}
-                        number={number}
-                    />
-                </ListItem>
-            ))}
-        </ListOfContacts>
+        <>
+            {isLoading  && <Loader type="dual-rings"/>}
+            {hasData ? <ListOfContacts>
+                            {contactList.map(({ id, name, phone }) => (
+                                    <ListItem key={id}>
+                                        <Contact
+                                            id={id}
+                                            name={name}
+                                            number={phone}
+                                        />
+                                    </ListItem>
+                                ))}
+                        </ListOfContacts>
+                    : null
+            }
+            {showLoader ? <Empty message="Your phonebook is empty..."/> : null}
+        </>
     );
 }
 
